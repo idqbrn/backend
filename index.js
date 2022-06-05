@@ -17,16 +17,75 @@ const pool = new pg.Pool(config);
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-app.get('/', (req, res, next) => {
-    res.sendFile('dog.jpg', { root: __dirname });
-});
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
-app.get('/:state/:disease', (req, res, next) => {
+
+app.post('/crud', (req, res, next) => {
     pool.connect(function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
-        client.query(`select latitude, longitude, ${req.params.disease} from mytable where uf = '${req.params.state}'`, function (err, result) {
+        const body = req.body;
+        client.query(`INSERT INTO idqbrn.disease (name_id, description, treatments, vector, image)
+        VALUES ('${body.name_id}', '${body.description}', '${body.treatments}', '${body.vector}', Null);`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(req.body);
+        })
+    })
+ });
+
+ app.delete('/crud', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        const body = req.body;
+        client.query(`DELETE FROM idqbrn.disease WHERE name_id = '${body.name_id}'`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(req.body);
+        })
+    })
+ });
+
+ app.post('/upload', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        // console.log(req.body[0])
+        const body = req.body;
+        body.forEach(element => {
+            // console.log(element);
+            client.query(`INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id, created_at, deleted_at)
+            VALUES ('${element.total}', '${element.place_id}', '${element.disease_id}', '${element.user_id}','${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, function (err, result) {
+                 done();
+                 if (err) {
+                     console.log(err);
+                     res.status(400).send(err);
+                 }
+            })
+        });
+        res.status(200).send(body);
+    })
+ });
+
+//Dashboards
+
+
+app.get('/dashboard/total/:disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`select sum(total) from idqbrn.cases where disease_id = '${req.params.disease}'`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -37,10 +96,23 @@ app.get('/:state/:disease', (req, res, next) => {
     })
  });
 
-app.post('/upload', (req, res) => {
-    res.send(req.body);
-});
-
-
-
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.get('/dashboard/max/:disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`select place_id, total
+        from idqbrn.cases
+        where total = (
+            select max(total)
+            from idqbrn.cases
+        )`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
