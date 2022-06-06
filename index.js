@@ -25,7 +25,12 @@ app.use(express.urlencoded({ extended: false }))
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
-app.get('/disease', (req, res, next) => {
+
+app.get('/', (req, res, next) => {
+    res.send('<h1>Backend tá vivo</h1>');
+ });
+
+app.get('/disease/:disease', (req, res, next) => {
     pool.connect(function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
@@ -38,7 +43,7 @@ app.get('/disease', (req, res, next) => {
             FROM idqbrn.cases
             INNER JOIN idqbrn.places
                 ON idqbrn.cases.place_id = idqbrn.places.code
-            WHERE disease_id = '${req.body.disease}'`, function (err, result) {
+            WHERE disease_id = '${req.params.disease}'`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -123,7 +128,7 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
              }
              res.status(200).send(result.rows);
         })
-    })
+    })  
  });
 
 
