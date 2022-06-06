@@ -86,18 +86,18 @@ app.post('/crud', (req, res, next) => {
  });
 
  app.post('/upload', (req, res, next) => {
-    pool.connect(function (err, client, done) {
+    pool.connect( async function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
-        // console.log(req.body[0])
-        const body = req.body;
+        const body = req.body.vector;
         body.forEach(element => {
             // console.log(element);
             client.query(`INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id, created_at, deleted_at)
-            VALUES ('${element.total}', '${element.place_id}', '${element.disease_id}', '${element.user_id}','${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, function (err, result) {
-                 done();
+            VALUES ('${element.total}', '${element.place_id}', '${element.disease_id}', '${element.user_id}','${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, async function (err, result) {
+                
                  if (err) {
+                    element.release()
                      console.log(err);
                      res.status(400).send(err);
                  }
