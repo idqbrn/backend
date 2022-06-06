@@ -120,8 +120,9 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
     })
  });
 
-app.get('/dashboard/max/:disease', (req, res, next) => {
-    pool.connect(function (err, client, done) {
+
+ app.get('/dashboard/max/:disease', (req, res, next) => {
+    pool.connect(async function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
@@ -135,14 +136,37 @@ app.get('/dashboard/max/:disease', (req, res, next) => {
                  console.log(err);
                  res.status(400).send(err);
              }
-             client.query(`select city from places where code = '${result.rows.place_id}'`, function (err, result) {
-                  done();
-                  if (err) {
-                      console.log(err);
-                      res.status(400).send(err);
-                  }
-                  res.status(200).send(result.rows)
-             })
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ app.get('/places/:code', (req, res, next) => {
+    pool.connect(async function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`select city from idqbrn.places where code = ${req.params.code}`, function (err, result) {
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ app.get('/diseasesName', (req, res, next) => {
+    pool.connect(async function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`select name_id from idqbrn.disease`, function (err, result) {
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
         })
     })
  });
