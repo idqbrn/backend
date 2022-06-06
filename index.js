@@ -19,6 +19,30 @@ app.use(express.urlencoded({ extended: false }))
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
+app.get('/disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`
+            SELECT
+                latitude as lat,
+                longitude as lng,
+                total as count
+            FROM idqbrn.cases
+            INNER JOIN idqbrn.places
+                ON idqbrn.cases.place_id = idqbrn.places.code
+            WHERE disease_id = '${req.body.disease}'`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
 
 app.post('/crud', (req, res, next) => {
     pool.connect(function (err, client, done) {
@@ -107,12 +131,18 @@ app.get('/dashboard/max/:disease', (req, res, next) => {
             select max(total)
             from idqbrn.cases
         )`, function (err, result) {
-             done();
              if (err) {
                  console.log(err);
                  res.status(400).send(err);
              }
-             res.status(200).send(result.rows);
+             client.query(`select city from places where code = '${result.rows.place_id}'`, function (err, result) {
+                  done();
+                  if (err) {
+                      console.log(err);
+                      res.status(400).send(err);
+                  }
+                  res.status(200).send(result.rows)
+             })
         })
     })
  });
