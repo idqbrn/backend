@@ -26,9 +26,41 @@ app.use(express.urlencoded({ extended: false }))
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
 
-app.get('/', (req, res, next) => {
-    res.send('<h1>Backend tá vivo</h1>');
+app.get('/', function (req, res) {
+    res.sendFile('C:\\Users\\danie\\Documents\\backend\\dog.jpg');
+});
+
+
+
+// admin
+
+app.get('/admin/search/:disease/:state', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT
+                c.disease_id,
+                p.state,
+                p.city,
+                c.total
+            FROM idqbrn.cases c
+            INNER JOIN idqbrn.places p
+                ON c.place_id = p.code
+            WHERE c.disease_id ='${req.params.disease}'
+                AND p.state ='${req.params.state}'`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
  });
+
 
 app.get('/disease/:disease', (req, res, next) => {
     pool.connect(function (err, client, done) {
@@ -173,6 +205,31 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
             console.log("Can not connect to the DB" + err);
         }
         client.query(`select name_id from idqbrn.disease`, function (err, result) {
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ app.get('/dashboard/chart/:state/:city', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT
+                c.disease_id,
+                c.total
+            FROM idqbrn.cases c
+            INNER JOIN idqbrn.places p
+                ON c.place_id = p.code
+            WHERE p.state ='${req.params.state}'
+                AND p.city ='${req.params.city}'`, function (err, result) {
+             done();
              if (err) {
                  console.log(err);
                  res.status(400).send(err);
