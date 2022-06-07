@@ -61,6 +61,28 @@ app.get('/admin/search/:disease/:state', (req, res, next) => {
     })
  });
 
+app.get('/disease/info', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        client.query(`
+            SELECT
+                name_id,
+                description,
+                treatments,
+                vector,
+                image
+            FROM idqbrn.diseases`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+});
 
 app.get('/disease/:disease', (req, res, next) => {
     pool.connect(function (err, client, done) {
