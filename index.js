@@ -73,7 +73,7 @@ app.get('/diseaseInfo', (req, res, next) => {
                 treatments,
                 vector,
                 image
-            FROM idqbrn.diseases`, function (err, result) {
+            FROM idqbrn.disease`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -267,6 +267,25 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
                 ON c.place_id = p.code
             WHERE p.state ='${req.params.state}'
                 AND p.city ='${req.params.city}'`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+
+ app.get('/diseaseStatesSum/:disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`select sum(idqbrn.cases.total), idqbrn.places.state from 
+        idqbrn.cases join idqbrn.places on place_id = code where idqbrn.cases.disease_id = '${req.params.disease}' group by idqbrn.places.state`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
