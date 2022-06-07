@@ -61,7 +61,7 @@ app.get('/admin/search/:disease/:state', (req, res, next) => {
     })
  });
 
-app.get('/disease/info', (req, res, next) => {
+app.get('/diseaseInfo', (req, res, next) => {
     pool.connect(function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
