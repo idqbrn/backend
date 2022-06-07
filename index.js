@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-
+var format = require('pg-format');
 const PORT = process.env.PORT || 5000;
 const pg = require('pg');
 const cors = require('cors');
@@ -115,8 +115,7 @@ app.post('/crud', (req, res, next) => {
             console.log("Can not connect to the DB" + err);
         }
         const body = req.body;
-        client.query(`INSERT INTO idqbrn.disease (name_id, description, treatments, vector, image)
-        VALUES ('${body.name_id}', '${body.description}', '${body.treatments}', '${body.vector}', Null);`, function (err, result) {
+        client.query(format(`INSERT INTO idqbrn.disease (name_id, description, treatments, vector, image) VALUES %L`, values),[], function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -150,23 +149,31 @@ app.post('/crud', (req, res, next) => {
             console.log("Can not connect to the DB" + err);
         }
         const body = req.body.vector;
-        body.forEach(element => {
-            // console.log(element);
-            client.query(`INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id, created_at, deleted_at)
-            VALUES ('${element.total}', '${element.place_id}', '${element.disease_id}', '${element.user_id}','${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, async function (err, result) {
-                
-                 if (err) {
-                    element.release()
-                     console.log(err);
-                     res.status(400).send(err);
-                 }
-            })
-        });
-        res.status(200).send(body);
+        const doubles = body.map(num => {
+            return Object.values(num)
+        })
+       
+        console.log(doubles)
+        client.query('INSERT INTO idqbrn.cases (total,  disease_id, place_id,user_id, created_at, deleted_at) VALUES ' + doubles,[], async function (err, result) {
+       
+        if (err) {
+            client.release()       
+            console.log(err);
+            res.status(400).json({
+               status_code: 0,
+               error_msg: "Require Params Missing",
+             });
+             
+        }else{
+            client.release()
+            res.status(200).send(body);
+        }
+        
+        
     })
+    
  });
-
-//Dashboards
+ });
 
 
 app.get('/dashboard/total/:disease', (req, res, next) => {
