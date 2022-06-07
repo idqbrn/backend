@@ -191,12 +191,20 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
-        client.query(`select place_id, total
-        from idqbrn.cases
-        where total = (
-            select max(total)
-            from idqbrn.cases
-        )`, function (err, result) {
+        client.query(`
+            SELECT
+                p.state,
+                p.city,
+                c.total
+            FROM idqbrn.cases c
+            INNER JOIN idqbrn.places p
+                ON c.place_id = p.code
+            WHERE c.total = (
+                SELECT max(c2.total)
+                FROM idqbrn.cases c2
+                WHERE c.disease_id = c2.disease_id
+            )
+            AND c.disease_id = '${req.params.disease}'`, function (err, result) {
              if (err) {
                  console.log(err);
                  res.status(400).send(err);
