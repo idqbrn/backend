@@ -153,10 +153,9 @@ app.post('/crud', (req, res, next) => {
             return Object.values(num)
         })
        
-        body.forEach(element => {
-         client.query(`INSERT INTO idqbrn.cases (total,  disease_id, place_id,user_id, created_at, deleted_at) VALUES ('${element.total}', '${element.place_id}', '${element.disease_id}', '${element.user_id}','${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, async function (err, result) {
+        console.log(doubles)
+        client.query('INSERT INTO idqbrn.cases (total,  disease_id, place_id,user_id, created_at, deleted_at) VALUES ' + doubles,[], async function (err, result) {
        
-        })})
         if (err) {
             client.release()       
             console.log(err);
@@ -171,7 +170,7 @@ app.post('/crud', (req, res, next) => {
         }
         
         
-    
+    })
     
  });
  });
