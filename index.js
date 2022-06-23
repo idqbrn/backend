@@ -27,7 +27,7 @@ app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
 
 app.get('/', function (req, res) {
-    res.sendFile('C:\\Users\\danie\\Documents\\backend\\dog.jpg');
+    res.sendFile('dog.jpg');
 });
 
 
@@ -154,7 +154,7 @@ app.post('/crud', (req, res, next) => {
         })
        
         console.log(doubles)
-        client.query('INSERT INTO idqbrn.cases (total,  disease_id, place_id,user_id, created_at, deleted_at) VALUES ' + doubles,[], async function (err, result) {
+        client.query('INSERT INTO idqbrn.cases (total,  disease_id, place_id, user_id, created_at, deleted_at) VALUES ' + doubles,[], async function (err, result) {
        
         if (err) {
             client.release()       
@@ -175,6 +175,29 @@ app.post('/crud', (req, res, next) => {
  });
  });
 
+ app.put('/updateCase', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        const body = req.body;
+        client.query(`UPDATE idqbrn.cases
+            SET total = ${body.total}
+            WHERE disease_id = '${body.disease}'
+            AND place_id IN (
+                SELECT code FROM idqbrn.places WHERE state = '${body.state}' AND city = '${body.city}'
+            )`
+
+        ,[], function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(req.body);
+        })
+    })
+ });
 
 app.get('/dashboard/total/:disease', (req, res, next) => {
     pool.connect(function (err, client, done) {
