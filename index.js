@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 5000;
 const pg = require('pg');
 const cors = require('cors');
 const corsOptions ={
-    origin:'http://localhost:3000', 
+    origin: ['https://45c2-2804-14d-5cd1-4942-8819-161-5705-64c6.sa.ngrok.io', 'http://localhost:3000'], 
     credentials:true,            //access-control-allow-credentials:true
     optionSuccessStatus:200
 }
@@ -61,6 +61,58 @@ app.get('/admin/search/:disease/:state', (req, res, next) => {
     })
  });
 
+ app.get('/admin/diseaseStatesSum/:disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT idqbrn.cases.disease_id, sum(idqbrn.cases.total) as total, idqbrn.places.state, '' as city
+            FROM idqbrn.cases 
+            JOIN idqbrn.places 
+            ON place_id = code 
+            WHERE idqbrn.cases.disease_id = '${req.params.disease}' 
+            GROUP BY idqbrn.cases.disease_id, idqbrn.places.state 
+            ORDER BY total DESC`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ // disease sum for each state
+app.get('/admin/searchDisease/:disease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT
+                c.disease_id,
+                p.state,
+                sum(c.total) as stateTotal
+            FROM idqbrn.cases c
+            INNER JOIN idqbrn.places p
+                ON c.place_id = p.code
+            WHERE c.disease_id ='${req.params.disease}'
+            GROUP BY disease_id, p.state`, function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+// dashboard disease information
 app.get('/diseaseInfo', (req, res, next) => {
     pool.connect(function (err, client, done) {
         if (err) {
@@ -279,7 +331,7 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
-        
+        console.log(req.params);
         client.query(`
             SELECT
                 c.disease_id,
@@ -288,13 +340,15 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
             INNER JOIN idqbrn.places p
                 ON c.place_id = p.code
             WHERE p.state ='${req.params.state}'
-                AND p.city ='${req.params.city}'`, function (err, result) {
-             done();
-             if (err) {
-                 console.log(err);
-                 res.status(400).send(err);
-             }
-             res.status(200).send(result.rows);
+                AND p.city ='${req.params.city}'`,
+            function (err, result) {
+                done();
+                if (err) {
+                    console.log(err);
+                    res.status(400).send(err);
+                }
+                console.log(result.rows);
+                res.status(200).send(result.rows);
         })
     })
  });
@@ -307,7 +361,9 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
         }
         
         client.query(`select sum(idqbrn.cases.total), idqbrn.places.state from 
-        idqbrn.cases join idqbrn.places on place_id = code where idqbrn.cases.disease_id = '${req.params.disease}' group by idqbrn.places.state`, function (err, result) {
+        idqbrn.cases join idqbrn.places on place_id = code 
+        where idqbrn.cases.disease_id = '${req.params.disease}' group by idqbrn.places.state 
+        order by sum DESC`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
