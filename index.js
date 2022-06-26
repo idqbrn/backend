@@ -213,25 +213,44 @@ app.post('/insertDisease', (req, res, next) => {
         })
        
         console.log(doubles)
-        client.query('INSERT INTO idqbrn.cases (total,  disease_id, place_id, user_id, created_at, deleted_at) VALUES ' + doubles,[], async function (err, result) {
+        client.query(`INSERT INTO idqbrn.cases (total, disease_id, place_id, user_id, created_at, deleted_at) 
+            VALUES ` + doubles,[], async function (err, result) {
        
-        if (err) {
-            client.release()       
-            console.log(err);
-            res.status(400).json({
-               status_code: 0,
-               error_msg: "Require Params Missing",
-             });
-             
-        }else{
-            client.release()
-            res.status(200).send(body);
-        }
-        
-        
-    })
-    
+            if (err) {
+                client.release()       
+                console.log(err);
+                res.status(400).json({
+                status_code: 0,
+                error_msg: "Require Params Missing",
+                });
+                
+            }else{
+                client.release()
+                res.status(200).send(body);
+            } 
+        })
+    });
  });
+
+ app.post('/insertCase', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        const body = req.body;
+        console.log(body);
+        client.query(`INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id)
+            VALUES (${body.total}, ${body.place_id}, '${body.disease_id}', ${body.user_id})`
+
+        ,[], function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(req.body);
+        })
+    })
  });
 
  app.put('/updateCase', (req, res, next) => {
