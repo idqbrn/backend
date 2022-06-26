@@ -125,7 +125,8 @@ app.get('/diseaseInfo', (req, res, next) => {
                 treatments,
                 vector,
                 image
-            FROM idqbrn.disease`, function (err, result) {
+            FROM idqbrn.disease
+            ORDER BY name_id`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -161,13 +162,19 @@ app.get('/disease/:disease', (req, res, next) => {
  });
 
 
-app.post('/crud', (req, res, next) => {
+app.post('/insertDisease', (req, res, next) => {
     pool.connect(function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
         const body = req.body;
-        client.query(format(`INSERT INTO idqbrn.disease (name_id, description, treatments, vector, image) VALUES %L`, values),[], function (err, result) {
+        client.query(format(`INSERT INTO idqbrn.disease (name_id, description, treatments, vector, image) 
+            VALUES (
+                '${body.name_id}',
+                '${body.description}',
+                '${body.treatments}',
+                '${body.vector}',
+                null )`, body),[], function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -240,6 +247,26 @@ app.post('/crud', (req, res, next) => {
                 SELECT code FROM idqbrn.places WHERE state = '${body.state}' AND city = '${body.city}'
             )`
 
+        ,[], function (err, result) {
+             done();
+             if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(req.body);
+        })
+    })
+ });
+
+ app.put('/updateDisease', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        const body = req.body;
+        client.query(`UPDATE idqbrn.disease
+            SET description = '${body.description}', treatments = '${body.treatments}', vector = '${body.vector}' 
+            WHERE name_id = '${body.name_id}'`
         ,[], function (err, result) {
              done();
              if (err) {
