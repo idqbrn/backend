@@ -203,31 +203,38 @@ app.post('/insertDisease', (req, res, next) => {
  });
 
  app.post('/upload', (req, res, next) => {
+    console.log('Entramos no upload');
     pool.connect( async function (err, client, done) {
         if (err) {
             console.log("Can not connect to the DB" + err);
         }
         const body = req.body.vector;
-        const doubles = body.map(num => {
-            return Object.values(num)
-        })
+        console.log(body);
+
+        // const doubles = body.map(num => {
+        //     return Object.values(num)
+        // });
+        // console.log(doubles);
        
-        console.log(doubles)
-        client.query(`INSERT INTO idqbrn.cases (total, disease_id, place_id, user_id, created_at, deleted_at) 
-            VALUES ` + doubles,[], async function (err, result) {
-       
-            if (err) {
-                client.release()       
-                console.log(err);
-                res.status(400).json({
-                status_code: 0,
-                error_msg: "Require Params Missing",
-                });
-                
-            }else{
-                client.release()
-                res.status(200).send(body);
-            } 
+        body.forEach(element => {
+            client.query(`INSERT INTO idqbrn.cases 
+                (total, place_id, disease_id, user_id, created_at, deleted_at)
+                VALUES 
+                (${parseInt(element.total)}, ${parseInt(element.place_id)}, 
+                '${element.disease_id}', ${element.user_id}, 
+                '${element.created_at}', ${element.deleted_at ? element.deleted_at : 'null'});`, 
+                async function (err, result) {   
+                    // done();
+                    if (err) {
+                        // client.release();     
+                        console.log(err);
+                        res.status(400).json(err);
+                    }else{
+                        // client.release();
+                        res.status(200).send('OK');
+                    } 
+                }
+            );
         })
     });
  });
@@ -239,16 +246,19 @@ app.post('/insertDisease', (req, res, next) => {
         }
         const body = req.body;
         console.log(body);
-        client.query(`INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id)
-            VALUES (${body.total}, ${body.place_id}, '${body.disease_id}', ${body.user_id})`
-
+        client.query(`
+            INSERT INTO idqbrn.cases (total, place_id, disease_id, user_id)
+            SELECT ${parseInt(body.total)} as total, p.code as place_id, 
+                ${body.disease_id} as disease_id, ${body.user_id} as user_id
+            FROM idqbrn.places p
+            WHERE p.state = ${body.state} AND p.city = ${body.city};`
         ,[], function (err, result) {
-             done();
-             if (err) {
-                 console.log(err);
-                 res.status(400).send(err);
-             }
-             res.status(200).send(req.body);
+            done();
+            if (err) {
+                console.log(err);
+                res.status(400).send(err);
+            }
+            res.status(200).send(result.body);
         })
     })
  });
