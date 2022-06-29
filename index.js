@@ -27,7 +27,7 @@ app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 
 
 app.get('/', function (req, res) {
-    res.sendFile('dog.jpg');
+    res.sendFile('C:\\Users\\User\\Desktop\\Pastas_Git\\backend\\dog.jpg');
 });
 
 
@@ -50,7 +50,8 @@ app.get('/admin/search/:disease/:state', (req, res, next) => {
             INNER JOIN idqbrn.places p
                 ON c.place_id = p.code
             WHERE c.disease_id ='${req.params.disease}'
-                AND p.state ='${req.params.state}'`, function (err, result) {
+                AND p.state ='${req.params.state}'
+            ORDER BY c.total DESC`, function (err, result) {
              done();
              if (err) {
                  console.log(err);
@@ -123,8 +124,7 @@ app.get('/diseaseInfo', (req, res, next) => {
                 name_id,
                 description,
                 treatments,
-                vector,
-                image
+                vector
             FROM idqbrn.disease
             ORDER BY name_id`, function (err, result) {
              done();
@@ -422,6 +422,71 @@ app.get('/dashboard/total/:disease', (req, res, next) => {
         order by sum DESC`, function (err, result) {
              done();
              if (err) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ 
+ // MOBILE
+ app.get('/mobile/nearDiseases/:latitude/:longitude/:rad', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT
+                d.name_id,
+                d.description,
+                d.treatments,
+                d.vector,
+                SUM(c.total) as total
+            FROM idqbrn.cases c, idqbrn.disease d, idqbrn.places p
+            WHERE c.place_id = p.code
+                AND c.disease_id = d.name_id
+                AND p.latitude > (${parseFloat(req.params.latitude)} - ${parseFloat(req.params.rad)})
+                AND p.latitude < (${parseFloat(req.params.latitude)} + ${parseFloat(req.params.rad)})
+                AND p.longitude > (${parseFloat(req.params.longitude)} - ${parseFloat(req.params.rad)})
+                AND p.longitude < (${parseFloat(req.params.longitude)} + ${parseFloat(req.params.rad)})
+            GROUP BY d.name_id
+            ORDER BY total DESC;`, function (err, result) {
+             done();
+             if (err || result == [] || result == undefined || result == null) {
+                 console.log(err);
+                 res.status(400).send(err);
+             }
+             res.status(200).send(result.rows);
+        })
+    })
+ });
+
+ app.get('/mobile/nearDiseases/map/:latitude/:longitude/:rad', (req, res, next) => {
+    pool.connect(function (err, client, done) {
+        if (err) {
+            console.log("Can not connect to the DB" + err);
+        }
+        
+        client.query(`
+            SELECT
+                p.state,
+                p.city,
+                p.latitude,
+                p.longitude,
+                SUM(c.total) as total
+            FROM idqbrn.cases c, idqbrn.places p
+            WHERE c.place_id = p.code
+                AND p.latitude > (${parseFloat(req.params.latitude)} - ${parseFloat(req.params.rad)})
+                AND p.latitude < (${parseFloat(req.params.latitude)} + ${parseFloat(req.params.rad)})
+                AND p.longitude > (${parseFloat(req.params.longitude)} - ${parseFloat(req.params.rad)})
+                AND p.longitude < (${parseFloat(req.params.longitude)} + ${parseFloat(req.params.rad)})
+            GROUP BY p.state, p.city, p.latitude, p.longitude
+            ORDER BY total DESC;`, function (err, result) {
+             done();
+             if (err || result == [] || result == undefined || result == null) {
                  console.log(err);
                  res.status(400).send(err);
              }
